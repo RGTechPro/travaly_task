@@ -51,65 +51,77 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
     super.dispose();
   }
 
+  void _handleBackNavigation() {
+    // Reload popular hotels after navigation completes
+    Future.microtask(() {
+      if (context.mounted) {
+        context.read<HotelCubit>().loadPopularHotels(
+              city: 'Mumbai',
+              state: 'Maharashtra',
+              country: 'India',
+            );
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: AppColors.primary,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-            // Reload popular hotels after navigation completes
-            Future.microtask(() {
-              if (context.mounted) {
-                context.read<HotelCubit>().loadPopularHotels(
-                      city: 'Mumbai',
-                      state: 'Maharashtra',
-                      country: 'India',
-                    );
-              }
-            });
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          _handleBackNavigation();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          elevation: 0,
+          backgroundColor: AppColors.primary,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () {
+              Navigator.pop(context);
+              _handleBackNavigation();
+            },
+          ),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Search Results',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              Text(
+                widget.searchQuery,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.white70,
+                ),
+              ),
+            ],
+          ),
+        ),
+        body: BlocBuilder<HotelCubit, HotelState>(
+          builder: (context, state) {
+            return switch (state) {
+              HotelLoading() => const SearchLoadingState(),
+              HotelSearchResults(:final hotels)
+                  when hotels.isEmpty && !state.isLoadingMore =>
+                SearchEmptyState(searchQuery: widget.searchQuery),
+              HotelSearchResults() => _buildResultsList(state),
+              HotelError(:final message) => SearchErrorState(
+                  message: message,
+                  searchQuery: widget.searchQuery,
+                ),
+              _ => SearchEmptyState(searchQuery: widget.searchQuery),
+            };
           },
         ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Search Results',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            Text(
-              widget.searchQuery,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Colors.white70,
-              ),
-            ),
-          ],
-        ),
-      ),
-      body: BlocBuilder<HotelCubit, HotelState>(
-        builder: (context, state) {
-          return switch (state) {
-            HotelLoading() => const SearchLoadingState(),
-            HotelSearchResults(:final hotels)
-                when hotels.isEmpty && !state.isLoadingMore =>
-              SearchEmptyState(searchQuery: widget.searchQuery),
-            HotelSearchResults() => _buildResultsList(state),
-            HotelError(:final message) => SearchErrorState(
-                message: message,
-                searchQuery: widget.searchQuery,
-              ),
-            _ => SearchEmptyState(searchQuery: widget.searchQuery),
-          };
-        },
       ),
     );
   }

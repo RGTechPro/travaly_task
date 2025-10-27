@@ -195,7 +195,6 @@ Using **Cubit** (simplified BLoC) for predictable state management:
 - Clear state transitions (Initial → Loading → Success/Error)
 - No business logic in UI layer
 
-
 ## Known Issues
 
 - Some API responses don't include complete hotel data
