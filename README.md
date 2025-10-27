@@ -2,6 +2,10 @@
 
 A Flutter hotel search application built with Clean Architecture, integrating with the MyTravaly API to provide seamless hotel discovery and browsing experience.
 
+## 📱 Download APK
+
+**[Download Release APK](https://drive.google.com/file/d/18fWZTC_G6jn1Wn3I__P7UbX17AO6MDlS/view?usp=sharing)** - Ready to install on Android devices
+
 ## Overview
 
 This project demonstrates a production-ready Flutter app implementing Clean Architecture principles with proper separation of concerns, state management using Cubit (flutter_bloc), and comprehensive error handling.
