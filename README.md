@@ -4,7 +4,7 @@ A Flutter hotel search application built with Clean Architecture, integrating wi
 
 ## 📱 Download APK
 
-**[Download Release APK](https://drive.google.com/file/d/18fWZTC_G6jn1Wn3I__P7UbX17AO6MDlS/view?usp=sharing)** - Ready to install on Android devices
+**[Download Release APK](https://drive.google.com/drive/folders/1XLxAT91FeSFIH_xcKYlD_M6N7eEetiQw?usp=sharing)** - Ready to install on Android devices
 
 ## Overview
 
