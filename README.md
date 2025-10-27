@@ -9,12 +9,14 @@ This project demonstrates a production-ready Flutter app implementing Clean Arch
 ## Features
 
 ### Authentication
+
 - Google Sign-In integration with proper OAuth flow
 - Persistent sessions using SharedPreferences
 - Auto-login on app restart
 - Clean error handling for auth failures
 
 ### Hotel Discovery
+
 - Browse popular hotels in your city
 - Real-time search across properties, cities, states
 - Smooth pagination for search results
@@ -22,6 +24,7 @@ This project demonstrates a production-ready Flutter app implementing Clean Arch
 - Device fingerprinting for personalized results
 
 ### User Experience
+
 - Minimalistic, modern UI with coral accent theme
 - Shimmer loading animations
 - Empty states with helpful messages
@@ -77,16 +80,19 @@ lib/
 ### Layer Responsibilities
 
 **Domain Layer**: Pure business logic, no framework dependencies
+
 - Entities: Core business objects
 - Repositories: Abstract interfaces
 - Use Cases: Single responsibility business operations
 
 **Data Layer**: External data handling
+
 - Models: Extends entities with JSON serialization
 - Data Sources: API calls, local storage
 - Repository Implementations: Bridge between data sources and domain
 
 **Presentation Layer**: UI and state management
+
 - Cubit: BLoC pattern for state management
 - Pages: UI screens organized by feature
 - Widgets: Reusable UI components
@@ -103,7 +109,7 @@ get_it: ^7.6.4
 injectable: ^2.3.2
 
 # Functional Programming
-dartz: ^0.10.1  # Either for error handling
+dartz: ^0.10.1 # Either for error handling
 
 # API & Storage
 http: ^1.2.0
@@ -117,6 +123,7 @@ google_sign_in: ^6.2.1
 ## Getting Started
 
 ### Prerequisites
+
 - Flutter SDK (3.5.1+)
 - Dart SDK (3.0+)
 - Android Studio / Xcode
@@ -125,6 +132,7 @@ google_sign_in: ^6.2.1
 ### Installation
 
 1. Clone and setup:
+
 ```bash
 git clone https://github.com/RGTechPro/travaly_task.git
 cd travaly_task
@@ -132,6 +140,7 @@ flutter pub get
 ```
 
 2. Run the app:
+
 ```bash
 flutter run
 ```
@@ -139,6 +148,7 @@ flutter run
 ### Configuration
 
 The app uses centralized configuration in `lib/core/config/api_config.dart`:
+
 - Base URL for MyTravaly API
 - Authentication token
 - Default limits and currencies
@@ -147,14 +157,17 @@ The app uses centralized configuration in `lib/core/config/api_config.dart`:
 ## API Integration
 
 ### MyTravaly API
+
 Base URL: `https://api.mytravaly.com/public/v1/`
 
 **Implemented Endpoints:**
+
 1. **Device Register** - Generates visitor token with device fingerprint
 2. **Search Auto Complete** - Multi-type search (city, state, country, property)
 3. **Popular Stay** - Location-based popular hotels
 
 **Features:**
+
 - Automatic device registration on first launch
 - Visitor token management for personalized results
 - Real device info integration (Android/iOS)
@@ -172,59 +185,14 @@ Base URL: `https://api.mytravaly.com/public/v1/`
 ## State Management
 
 Using **Cubit** (simplified BLoC) for predictable state management:
+
 - Separate cubits for Auth and Hotels
 - Immutable state classes with Equatable
 - Clear state transitions (Initial → Loading → Success/Error)
 - No business logic in UI layer
 
-## Code Quality
-
-- ✅ Clean Architecture principles
-- ✅ SOLID principles followed
-- ✅ No hardcoded strings (centralized in ApiConfig)
-- ✅ Proper error handling with custom exceptions
-- ✅ Null-safety throughout
-- ✅ Switch expressions for pattern matching (Dart 3+)
-- ✅ Organized file structure with feature folders
-- ✅ No setState() in presentation layer
-- ✅ ValueListenableBuilder for local UI state
-
-## What I Learned
-
-Building this project helped me understand:
-- Implementing Clean Architecture in a real Flutter app
-- Integrating with third-party APIs effectively
-- Managing complex state with Cubit
-- Proper error handling patterns
-- Device fingerprinting and token management
-- Writing maintainable, scalable code
-
-## Future Improvements
-
-- [ ] Add comprehensive unit tests
-- [ ] Implement hotel details page
-- [ ] Add favorites functionality with local storage
-- [ ] Implement advanced filters
-- [ ] Add date range picker for bookings
-- [ ] Offline support with caching
-- [ ] Analytics integration
 
 ## Known Issues
 
-- Google OAuth needs SHA-1 certificate configuration for production
 - Some API responses don't include complete hotel data
 - Pagination currently simulated on frontend
-
-## Development Notes
-
-This app was developed incrementally over 2 days:
-- Day 1 (Oct 27): Core architecture, domain, and data layers
-- Day 2 (Oct 28): Presentation layer, UI polish, and testing
-
-The commit history shows the natural progression of feature development.
-
----
-
-**Developer**: Rishabh Gupta  
-**Contact**: mt-tech@mytravaly.com  
-**Repository**: https://github.com/RGTechPro/travaly_task
