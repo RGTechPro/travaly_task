@@ -1,437 +1,374 @@
-# Clean Architecture Implementation - MyTravaly
+# Clean Architecture - Implementation Guide
 
-## Architecture Overview
+This document explains how Clean Architecture is implemented in this Flutter project.
 
-The project now follows **Clean Architecture** principles with **Cubit** (from flutter_bloc) for state management.
+## Why Clean Architecture?
 
-### Layer Structure
+I chose Clean Architecture because:
+- **Testability**: Each layer can be tested independently
+- **Maintainability**: Clear separation makes code easier to understand
+- **Scalability**: Easy to add new features without breaking existing code
+- **Independence**: UI, database, and frameworks are replaceable
 
-```
-lib/
-├── core/                          # Core/Shared layer
-│   ├── error/
-│   │   ├── exceptions.dart       # Custom exceptions
-│   │   └── failures.dart          # Failure classes
-│   └── usecase/
-│       └── usecase.dart          # Base UseCase class
-│
-├── features/                      # Feature modules
-│   ├── auth/                     # Authentication feature
-│   │   ├── data/
-│   │   │   ├── datasources/
-│   │   │   │   ├── auth_local_data_source.dart
-│   │   │   │   └── auth_remote_data_source.dart
-│   │   │   ├── models/
-│   │   │   │   └── user_model.dart
-│   │   │   └── repositories/
-│   │   │       └── auth_repository_impl.dart
-│   │   ├── domain/
-│   │   │   ├── entities/
-│   │   │   │   └── user.dart
-│   │   │   ├── repositories/
-│   │   │   │   └── auth_repository.dart
-│   │   │   └── usecases/
-│   │   │       ├── check_auth_status.dart
-│   │   │       ├── get_current_user.dart
-│   │   │       ├── sign_in_with_google.dart
-│   │   │       └── sign_out.dart
-│   │   └── presentation/
-│   │       ├── cubit/
-│   │       │   ├── auth_cubit.dart
-│   │       │   └── auth_state.dart
-│   │       └── pages/
-│   │           ├── login_page.dart
-│   │           └── splash_page.dart
-│   │
-│   └── hotels/                   # Hotels feature
-│       ├── data/
-│       │   ├── datasources/
-│       │   │   └── hotel_remote_data_source.dart
-│       │   ├── models/
-│       │   │   └── hotel_model.dart
-│       │   └── repositories/
-│       │       └── hotel_repository_impl.dart
-│       ├── domain/
-│       │   ├── entities/
-│       │   │   └── hotel.dart
-│       │   ├── repositories/
-│       │   │   └── hotel_repository.dart
-│       │   └── usecases/
-│       │       ├── get_popular_hotels.dart
-│       │       └── search_hotels.dart
-│       └── presentation/
-│           ├── cubit/
-│           │   ├── hotel_cubit.dart
-│           │   └── hotel_state.dart
-│           └── pages/
-│               ├── home_page.dart
-│               └── search_results_page.dart
-│
-├── utils/                        # Shared utilities
-│   └── app_theme.dart
-│
-├── widgets/                      # Reusable widgets
-│   └── hotel_card.dart
-│
-├── injection_container.dart      # Dependency Injection setup
-└── main.dart                     # App entry point
-```
+## The Three Layers
 
-## Clean Architecture Principles
+### 1. Domain Layer (Business Logic)
+The innermost layer - pure Dart code with no Flutter dependencies.
 
-### 1. **Separation of Concerns**
+**Contains:**
+- **Entities**: Core business objects (e.g., `User`, `Hotel`)
+- **Repositories**: Abstract contracts defining what data operations are needed
+- **Use Cases**: Single-responsibility business operations
 
-Each layer has a specific responsibility:
-
-- **Domain**: Business logic, entities, use cases (framework independent)
-- **Data**: API calls, local storage, repository implementations
-- **Presentation**: UI, state management with Cubit
-
-### 2. **Dependency Rule**
-
-Dependencies point inward:
-
-- Presentation → Domain ← Data
-- Domain layer has no dependencies on outer layers
-- Data and Presentation depend on Domain abstractions
-
-### 3. **Dependency Inversion**
-
-- Abstractions (interfaces) defined in Domain
-- Implementations in Data layer
-- Presentation uses abstractions through Dependency Injection
-
-## Key Components
-
-### Cubit (State Management)
-
-#### AuthCubit
-
+**Example:**
 ```dart
-States:
-- AuthInitial: Initial state
-- AuthLoading: Processing auth operations
-- AuthAuthenticated(User): User logged in
-- AuthUnauthenticated: No user session
-- AuthError(String): Auth error occurred
-
-Methods:
-- checkAuth(): Check if user is signed in
-- signIn(): Sign in with Google
-- logout(): Sign out
-```
-
-#### HotelCubit
-
-```dart
-States:
-- HotelInitial: Initial state
-- HotelLoading: Loading hotels
-- HotelLoaded(List<Hotel>): Hotels loaded
-- HotelSearchResults: Search results with pagination
-- HotelError(String): Error occurred
-
-Methods:
-- loadPopularHotels(): Load featured hotels
-- searchForHotels(query, page): Search with pagination
-```
-
-### Use Cases (Domain Layer)
-
-Each use case encapsulates a single business operation:
-
-**Auth Use Cases:**
-
-- `SignInWithGoogle`: Handle Google authentication
-- `SignOut`: Sign out user
-- `CheckAuthStatus`: Check if user is signed in
-- `GetCurrentUser`: Get cached user data
-
-**Hotel Use Cases:**
-
-- `GetPopularHotels`: Fetch popular/featured hotels
-- `SearchHotels`: Search hotels with query and pagination
-
-### Repositories (Domain → Data)
-
-**Abstract Repositories (Domain):**
-
-```dart
-abstract class AuthRepository {
-  Future<Either<Failure, User>> signInWithGoogle();
-  Future<Either<Failure, void>> signOut();
-  ...
+// Entity - Pure business object
+class Hotel extends Equatable {
+  final String propertyCode;
+  final String propertyName;
+  final String city;
+  // ... business properties only
 }
 
+// Repository Interface - What operations are needed
 abstract class HotelRepository {
-  Future<Either<Failure, List<Hotel>>> searchHotels(...);
+  Future<Either<Failure, List<Hotel>>> searchHotels(String query, int page);
   Future<Either<Failure, List<Hotel>>> getPopularHotels(...);
 }
-```
 
-**Implementations (Data):**
-
-- Handle API calls via data sources
-- Transform models to entities
-- Error handling with Either<Failure, Success>
-
-### Data Sources
-
-**Remote Data Sources:**
-
-- `HotelRemoteDataSource`: API calls to MyTravaly backend
-- `AuthRemoteDataSource`: Google Sign-In integration
-
-**Local Data Sources:**
-
-- `AuthLocalDataSource`: SharedPreferences for session management
-
-### Dependency Injection
-
-Using **get_it** for service locator pattern:
-
-```dart
-// Registration in injection_container.dart
-sl.registerFactory(() => AuthCubit(...));
-sl.registerLazySingleton(() => SignInWithGoogle(sl()));
-sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(...));
-```
-
-## Error Handling
-
-### Exceptions (Data Layer)
-
-```dart
-- ServerException: API errors
-- NetworkException: Connectivity issues
-- CacheException: Local storage errors
-- AuthException: Authentication failures
-```
-
-### Failures (Domain Layer)
-
-```dart
-- ServerFailure: Propagated from ServerException
-- NetworkFailure: Propagated from NetworkException
-- CacheFailure: Propagated from CacheException
-- AuthFailure: Propagated from AuthException
-```
-
-### Either Type (Functional Programming)
-
-Using `dartz` package for functional error handling:
-
-```dart
-Future<Either<Failure, User>> signIn() async {
-  try {
-    final user = await remoteDataSource.signIn();
-    return Right(user);
-  } catch (e) {
-    return Left(AuthFailure(e.message));
+// Use Case - Single business operation
+class SearchHotels {
+  final HotelRepository repository;
+  
+  Future<Either<Failure, List<Hotel>>> call(String query, int page) {
+    return repository.searchHotels(query, page);
   }
 }
 ```
 
-## Benefits of This Architecture
+### 2. Data Layer (External World)
+Handles all external data - APIs, databases, device info, etc.
 
-### 1. **Testability**
+**Contains:**
+- **Models**: Extend entities with JSON serialization (`fromJson`, `toJson`)
+- **Data Sources**: Actual API calls and local storage operations
+- **Repository Implementations**: Connect data sources to domain contracts
 
-- Each layer can be tested independently
-- Easy to mock dependencies
-- Use cases are pure business logic
-
-### 2. **Maintainability**
-
-- Clear separation of concerns
-- Easy to locate and fix bugs
-- Changes in one layer don't affect others
-
-### 3. **Scalability**
-
-- Easy to add new features
-- Can swap implementations (e.g., different APIs)
-- Independent module development
-
-### 4. **Reusability**
-
-- Use cases can be reused across different UI components
-- Domain entities are framework-independent
-- Repository abstractions allow multiple implementations
-
-### 5. **Team Collaboration**
-
-- Different developers can work on different layers
-- Clear contracts between layers
-- Reduced merge conflicts
-
-## State Management with Cubit
-
-### Why Cubit over StatefulWidget?
-
-1. **Predictable State Changes**: All state transitions go through cubit
-2. **Separation**: Business logic separated from UI
-3. **Testable**: Easy to test state changes
-4. **Reactive**: UI automatically rebuilds on state changes
-5. **Dev Tools**: Flutter DevTools support for debugging
-
-### Cubit Pattern
-
+**Example:**
 ```dart
-// 1. Define states
-abstract class AuthState {}
-class AuthLoading extends AuthState {}
-class AuthAuthenticated extends AuthState {
-  final User user;
-  AuthAuthenticated(this.user);
-}
-
-// 2. Cubit emits states
-class AuthCubit extends Cubit<AuthState> {
-  AuthCubit() : super(AuthInitial());
-
-  Future<void> signIn() async {
-    emit(AuthLoading());
-    final result = await signInUseCase();
-    result.fold(
-      (failure) => emit(AuthError(failure.message)),
-      (user) => emit(AuthAuthenticated(user)),
+// Model - Extends entity with JSON capabilities
+class HotelModel extends Hotel {
+  HotelModel({...}) : super(...);
+  
+  factory HotelModel.fromJson(Map<String, dynamic> json) {
+    return HotelModel(
+      propertyCode: json['propertyCode'] ?? '',
+      propertyName: json['propertyName'] ?? '',
+      // ... parse JSON
     );
   }
 }
 
-// 3. UI reacts to states
-BlocBuilder<AuthCubit, AuthState>(
-  builder: (context, state) {
-    if (state is AuthLoading) return LoadingWidget();
-    if (state is AuthAuthenticated) return HomeScreen();
-    return LoginScreen();
-  },
-)
-```
+// Data Source - Actual API implementation
+class HotelRemoteDataSourceImpl {
+  final http.Client client;
+  
+  Future<List<HotelModel>> searchHotels(String query, int page) async {
+    final response = await client.post(Uri.parse(ApiConfig.baseUrl), ...);
+    // ... handle response, return models
+  }
+}
 
-## Migration Notes
-
-### What Changed?
-
-1. **Old Structure** (Simple):
-
-   ```
-   lib/
-   ├── models/
-   ├── services/
-   ├── screens/
-   └── widgets/
-   ```
-
-2. **New Structure** (Clean Architecture):
-   ```
-   lib/
-   ├── core/
-   ├── features/
-   │   ├── auth/
-   │   │   ├── data/
-   │   │   ├── domain/
-   │   │   └── presentation/
-   │   └── hotels/
-   │       ├── data/
-   │       ├── domain/
-   │       └── presentation/
-   └── injection_container.dart
-   ```
-
-### Key Differences:
-
-- **State Management**: StatefulWidget → Cubit
-- **Service Layer**: Direct services → Use Cases + Repositories
-- **Error Handling**: try-catch → Either<Failure, Success>
-- **Dependencies**: Manual instantiation → Dependency Injection (get_it)
-- **Data Flow**: Direct API calls → Repository pattern
-
-## How to Use
-
-### 1. Initialize Dependencies
-
-```dart
-void main() async {
-  await di.init(); // Initialize dependency injection
-  runApp(MyApp());
+// Repository Implementation - Glue between data and domain
+class HotelRepositoryImpl implements HotelRepository {
+  final HotelRemoteDataSource remoteDataSource;
+  
+  @override
+  Future<Either<Failure, List<Hotel>>> searchHotels(String query, int page) async {
+    try {
+      final hotels = await remoteDataSource.searchHotels(query, page);
+      return Right(hotels);
+    } catch (e) {
+      return Left(ServerFailure());
+    }
+  }
 }
 ```
 
-### 2. Provide Cubits
+### 3. Presentation Layer (UI & State)
+Everything the user sees and interacts with.
 
+**Contains:**
+- **Cubits**: State management (BLoC pattern simplified)
+- **States**: Immutable state classes
+- **Pages**: Full screen widgets
+- **Widgets**: Reusable UI components
+
+**Example:**
 ```dart
-MultiBlocProvider(
-  providers: [
-    BlocProvider(create: (_) => di.sl<AuthCubit>()),
-    BlocProvider(create: (_) => di.sl<HotelCubit>()),
-  ],
-  child: MyApp(),
-)
+// State - Immutable state classes
+abstract class HotelState extends Equatable {}
+class HotelLoading extends HotelState {}
+class HotelLoaded extends HotelState {
+  final List<Hotel> hotels;
+}
+class HotelError extends HotelState {
+  final String message;
+}
+
+// Cubit - State management
+class HotelCubit extends Cubit<HotelState> {
+  final SearchHotels searchHotelsUseCase;
+  
+  void searchHotels(String query) async {
+    emit(HotelLoading());
+    final result = await searchHotelsUseCase(query, 1);
+    result.fold(
+      (failure) => emit(HotelError(failure.message)),
+      (hotels) => emit(HotelLoaded(hotels)),
+    );
+  }
+}
+
+// Page - UI that reacts to state
+class SearchResultsPage extends StatelessWidget {
+  Widget build(BuildContext context) {
+    return BlocBuilder<HotelCubit, HotelState>(
+      builder: (context, state) {
+        return switch (state) {
+          HotelLoading() => LoadingState(),
+          HotelLoaded() => HotelList(hotels: state.hotels),
+          HotelError() => ErrorState(message: state.message),
+          _ => EmptyState(),
+        };
+      },
+    );
+  }
+}
+```
+- Implementations in Data layer
+
+## Dependency Flow
+
+The key rule: **Dependencies point inward**
+
+```
+Presentation Layer (UI, Cubit)
+        ↓ (depends on)
+Domain Layer (Entities, Use Cases, Repository Interfaces)
+        ↑ (implemented by)
+Data Layer (Models, Data Sources, Repository Implementations)
 ```
 
-### 3. Use Cubits in UI
+- **Presentation** knows about Domain (uses use cases and entities)
+- **Data** knows about Domain (implements repository interfaces)
+- **Domain** knows about nothing (pure business logic)
+
+This means I can:
+- Change the UI framework without touching business logic
+- Swap APIs without changing use cases
+- Test each layer independently
+
+## Dependency Injection with GetIt
+
+I use GetIt as a service locator to manage dependencies:
 
 ```dart
-// Read cubit
-context.read<AuthCubit>().signIn();
+// Setup in injection_container.dart
+final sl = GetIt.instance;
 
-// Listen to state changes
-BlocListener<AuthCubit, AuthState>(
-  listener: (context, state) {
-    if (state is AuthError) {
-      showSnackBar(state.message);
-    }
-  },
-  child: ...
-)
+Future<void> init() async {
+  // Cubits (recreated each time)
+  sl.registerFactory(() => AuthCubit(
+    signInWithGoogle: sl(),
+    signOut: sl(),
+    checkAuthStatus: sl(),
+  ));
+  
+  // Use Cases (singleton)
+  sl.registerLazySingleton(() => SignInWithGoogle(sl()));
+  
+  // Repositories (singleton)
+  sl.registerLazySingleton<AuthRepository>(
+    () => AuthRepositoryImpl(
+      remoteDataSource: sl(),
+      localDataSource: sl(),
+    ),
+  );
+  
+  // Data Sources (singleton)
+  sl.registerLazySingleton<AuthRemoteDataSource>(
+    () => AuthRemoteDataSourceImpl(googleSignIn: sl()),
+  );
+  
+  // External (Google Sign-In, HTTP client)
+  sl.registerLazySingleton(() => GoogleSignIn());
+  sl.registerLazySingleton(() => http.Client());
+}
+```
 
-// Build UI based on state
-BlocBuilder<AuthCubit, AuthState>(
+## Error Handling Pattern
+
+I use the **Either** type from `dartz` for functional error handling:
+
+```dart
+// Success or Failure - no exceptions thrown
+Future<Either<Failure, List<Hotel>>> searchHotels(...) async {
+  try {
+    final hotels = await remoteDataSource.searchHotels(...);
+    return Right(hotels);  // Success
+  } on ServerException {
+    return Left(ServerFailure());  // Known error
+  } on NetworkException {
+    return Left(NetworkFailure());
+  } catch (e) {
+    return Left(UnknownFailure());  // Unexpected error
+  }
+}
+```
+
+**Benefits:**
+- No try-catch in UI layer
+- Explicit error handling
+- Type-safe - compiler ensures we handle both cases
+- Easy to test
+
+## State Management with Cubit
+
+Why Cubit over other solutions?
+- **Simpler than full BLoC**: No events, just methods
+- **Predictable**: Clear state transitions
+- **Testable**: Easy to test state changes
+- **No setState()**: UI reacts to state automatically
+
+### Pattern I follow:
+
+```dart
+// 1. Define states (sealed with pattern matching)
+sealed class HotelState extends Equatable {}
+class HotelInitial extends HotelState {}
+class HotelLoading extends HotelState {}
+class HotelLoaded extends HotelState {
+  final List<Hotel> hotels;
+}
+
+// 2. Create cubit with use cases
+class HotelCubit extends Cubit<HotelState> {
+  final SearchHotels searchHotelsUseCase;
+  
+  HotelCubit({required this.searchHotelsUseCase}) : super(HotelInitial());
+  
+  // 3. Call use case, emit states
+  Future<void> searchHotels(String query) async {
+    emit(HotelLoading());
+    
+    final result = await searchHotelsUseCase(query, 1);
+    
+    result.fold(
+      (failure) => emit(HotelError(failure.message)),
+      (hotels) => emit(HotelLoaded(hotels)),
+    );
+  }
+}
+
+// 4. UI reacts with BlocBuilder and switch expressions
+BlocBuilder<HotelCubit, HotelState>(
   builder: (context, state) {
-    if (state is AuthLoading) return LoadingWidget();
-    ...
+    return switch (state) {
+      HotelInitial() => EmptyState(),
+      HotelLoading() => LoadingState(),
+      HotelLoaded() => HotelList(hotels: state.hotels),
+      HotelError() => ErrorState(message: state.message),
+    };
   },
 )
 ```
+
+## Project Structure Decisions
+
+### Why organize by feature?
+Instead of organizing by type (all cubits together, all models together), I organize by feature:
+
+```
+features/
+  ├── auth/          # Everything auth-related in one place
+  │   ├── domain/
+  │   ├── data/
+  │   └── presentation/
+  └── hotels/        # Everything hotels-related in one place
+      ├── domain/
+      ├── data/
+      └── presentation/
+```
+
+**Benefits:**
+- Easy to find related code
+- Can work on a feature without touching others
+- Could extract a feature into a package easily
+- Scales better as app grows
+
+### Widget organization
+I further organized widgets by page:
+
+```
+presentation/
+  └── pages/
+      ├── home/
+      │   ├── home_page.dart
+      │   └── widgets/         # Widgets only used by home page
+      │       ├── shimmer_loading.dart
+      │       ├── empty_state.dart
+      │       └── error_state.dart
+      └── search/
+          ├── search_results_page.dart
+          └── widgets/         # Widgets only used by search page
+```
+
+This keeps page-specific widgets separate from truly reusable ones (in `lib/widgets/`).
+
+## What I Learned
+
+### Challenges faced:
+1. **Initial complexity**: Clean Architecture has more files/folders, but it paid off
+2. **Dependency direction**: Had to resist the urge to import Flutter in domain layer
+3. **Either type**: Functional error handling was new to me but makes sense now
+4. **Cubit vs BLoC**: Chose Cubit for simplicity, but understand when BLoC is better
+
+### Key takeaways:
+- **Separation is powerful**: Each layer can evolve independently
+- **Abstractions are worth it**: Repository pattern makes testing easy
+- **Immutable state**: Prevents subtle bugs and makes state predictable
+- **Use cases clarify intent**: Each one clearly states what business operation happens
 
 ## Testing Strategy
 
-### Unit Tests
+With Clean Architecture, testing becomes straightforward:
 
-- **Use Cases**: Test business logic
-- **Repositories**: Test data transformations
-- **Cubits**: Test state emissions
+**Unit Tests:**
+- Domain: Test use cases with mock repositories
+- Data: Test repositories with mock data sources
+- Presentation: Test cubits with mock use cases
 
-### Widget Tests
+**Widget Tests:**
+- Test UI widgets in isolation
+- Mock cubits to control state
 
-- Test UI with mock Cubits
-- Verify correct widgets for each state
+**Integration Tests:**
+- Test complete flows end-to-end
+- Use real implementations
 
-### Integration Tests
+(Tests not fully implemented yet, but architecture supports it)
 
-- End-to-end user flows
-- Real API integration
+## References
 
-## Future Enhancements
-
-1. **Add more features** following the same pattern
-2. **Implement caching strategy** for offline support
-3. **Add integration tests** for critical flows
-4. **Performance monitoring** with analytics
-5. **CI/CD pipeline** for automated testing
+Resources that helped me understand Clean Architecture:
+- Robert C. Martin's Clean Architecture book
+- Reso Coder's Flutter Clean Architecture tutorial
+- Official BLoC documentation
+- Dartz package for functional programming patterns
 
 ---
 
-## Summary
+**Note**: This architecture might seem overkill for a small app, but it's designed to scale. As features are added, this structure keeps code organized and maintainable.
 
-This clean architecture implementation provides:
 
-- ✅ Separation of concerns
-- ✅ Testable code
-- ✅ Scalable structure
-- ✅ Maintainable codebase
-- ✅ Professional-grade architecture
-- ✅ Industry best practices
-
-The app is now production-ready with a solid foundation for growth!
